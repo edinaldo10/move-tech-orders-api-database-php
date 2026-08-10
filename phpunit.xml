@@ -1,4 +1,3 @@
-cat << 'EOF' > phpunit.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
@@ -13,4 +12,3 @@ cat << 'EOF' > phpunit.xml
         <env name="DATABASE_URL" value="pgsql://postgres:postgres@localhost:5432/orders"/>
     </php>
 </phpunit>
-EOF
