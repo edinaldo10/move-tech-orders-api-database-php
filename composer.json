@@ -4,7 +4,8 @@
     "autoload": {
         "psr-4": {
             "Data\\": "public/Data/",
-            "Models\\": "public/Models/"
+            "Models\\": "public/Models/",
+	    "App\\": "public/"
         }
     },
     "require": {
