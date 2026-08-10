@@ -1,5 +1,6 @@
 <?php
-namespace Models;
+
+namespace App\Models; // Ajustado para o namespace padrão do Laravel
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -7,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Item extends Model
 {
     protected $table = 'items';
+    
+    // Mantido caso utilize UUID/String para os itens
     protected $keyType = 'string';
     public $incrementing = false;
+    
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,6 +23,13 @@ class Item extends Model
         'quantity'
     ];
 
+    protected $casts = [
+        'quantity' => 'integer', // Garante que o Eloquent trate quantity como número inteiro
+    ];
+
+    /**
+     * Relacionamento com o pedido pertencente.
+     */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class, 'order_id', 'id');
