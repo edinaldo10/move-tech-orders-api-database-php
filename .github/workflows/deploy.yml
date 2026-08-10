@@ -45,7 +45,6 @@ jobs:
       env:
         DATABASE_URL: pgsql://postgres:postgres@localhost:5432/orders
       run: |
-        chmod +x vendor/bin/phpunit
         vendor/bin/phpunit
       working-directory: .
 
