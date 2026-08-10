@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models; // Ajustado para o namespace padrão do Laravel
+namespace Models; 
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
