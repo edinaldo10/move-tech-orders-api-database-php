@@ -46,7 +46,7 @@ jobs:
       env:
         DATABASE_URL: pgsql://postgres:postgres@localhost:5432/orders
       run: |
-        vendor/bin/phpunit
+        vendor/bin/phpunit tests
       working-directory: .
 
   build-and-deploy:

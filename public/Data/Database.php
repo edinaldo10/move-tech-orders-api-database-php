@@ -7,7 +7,8 @@ class Database
 {
     public static function bootstrap(): void
     {
-        $databaseUrl = $_ENV['DATABASE_URL'] ?? null;
+        // Tenta pegar via $_ENV e faz fallback para getenv() do sistema
+        $databaseUrl = $_ENV['DATABASE_URL'] ?? getenv('DATABASE_URL') ?: null;
         
         $host = 'localhost';
         $port = '5432';
@@ -16,13 +17,16 @@ class Database
         $password = 'postgres';
 
         if (!empty($databaseUrl)) {
+            // Se a URL não tiver o scheme (ex: user:pass@host:port/db), o parse_url falha. 
+            // Adicionamos um prefixo temporário se necessário, mas o padrão pgsql:// resolve.
             $parsed = parse_url($databaseUrl);
-            if ($parsed !== false && isset($parsed['host'])) {
-                $host = $parsed['host'];
-                $port = $parsed['port'] ?? 5432;
-                $database = ltrim($parsed['path'] ?? '/orders', '/');
-                $username = $parsed['user'] ?? 'postgres';
-                $password = $parsed['pass'] ?? 'postgres';
+            
+            if ($parsed !== false) {
+                $host = $parsed['host'] ?? $host;
+                $port = $parsed['port'] ?? $port;
+                $database = isset($parsed['path']) ? ltrim($parsed['path'], '/') : $database;
+                $username = $parsed['user'] ?? $username;
+                $password = $parsed['pass'] ?? $password;
             }
         }
 
