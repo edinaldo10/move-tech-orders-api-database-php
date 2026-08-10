@@ -1,7 +1,7 @@
 <?php
 use Data\Database;
-use Models\Order;
-use Models\Item;
+use App\Models\Order;
+use App\Models\Item;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
