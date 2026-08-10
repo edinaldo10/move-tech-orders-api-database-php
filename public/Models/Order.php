@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models; // Ajustado para o namespace padrão do Laravel (App\Models)
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
