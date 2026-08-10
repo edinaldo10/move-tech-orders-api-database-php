@@ -11,6 +11,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
     services:
       postgres:
         image: postgres:15
@@ -20,67 +21,95 @@ jobs:
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Configurar PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pgsql
-          tools: composer
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pgsql
+        tools: composer
 
-      - name: Instalar dependências
-        run: composer install --prefer-dist --no-progress
+    - name: Instalar dependências via Composer
+      run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: .
 
-      - name: Executar testes
-        env:
-          DATABASE_URL: pgsql://postgres:postgres@localhost:5432/orders
-        run: |
-          chmod +x vendor/bin/phpunit
-          ./vendor/bin/phpunit
+    - name: Executar testes PHPUnit
+      env:
+        DATABASE_URL: pgsql://postgres:postgres@localhost:5432/orders
+      run: |
+        chmod +x vendor/bin/phpunit
+        vendor/bin/phpunit
+      working-directory: .
 
   build-and-deploy:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Login no Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.MGC_REGISTRY_USER }}
-          password: ${{ secrets.MGC_REGISTRY_PASSWORD }}
+    - name: Login no Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.MGC_REGISTRY_USER }}
+        password: ${{ secrets.MGC_REGISTRY_PASSWORD }}
 
-      - name: Build e Push
-        run: |
-          BASE="${{ env.REGISTRY }}/${{ secrets.MGC_REGISTRY_NAME }}/${{ env.IMAGE_NAME }}"
-          docker build -t $BASE:${{ github.sha }} -t $BASE:latest .
-          docker push $BASE:${{ github.sha }}
-          docker push $BASE:latest
+    - name: Build e push da imagem
+      run: |
+        REGISTRY_NAME="${{ secrets.MGC_REGISTRY_NAME }}"
+        if [ -z "$REGISTRY_NAME" ]; then
+          echo "Erro: O secret MGC_REGISTRY_NAME nao esta definido ou esta vazio!"
+          exit 1
+        fi
+        BASE="${{ env.REGISTRY }}/$REGISTRY_NAME/${{ env.IMAGE_NAME }}"
+        docker build --no-cache -t $BASE:${{ github.sha }} -t $BASE:latest -f Dockerfile .
+        docker push $BASE:${{ github.sha }}
+        docker push $BASE:latest
 
-      - name: Deploy no Kubernetes
-        run: |
-          echo "${{ secrets.MGC_KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
-          
-          # Criar Secrets com --dry-run para não falhar se já existirem
-          kubectl create secret docker-registry registry-secret \
-            --docker-server=${{ env.REGISTRY }} \
-            --docker-username=${{ secrets.MGC_REGISTRY_USER }} \
-            --docker-password=${{ secrets.MGC_REGISTRY_PASSWORD }} \
-            --dry-run=client -o yaml | kubectl apply -f -
-            
-          kubectl create secret generic db-secret \
-            --from-literal=url="${{ secrets.MGC_DATABASE_URL }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+    - name: Configurar kubectl e Validar Cluster
+      run: |
+        if [ -z "${{ secrets.MGC_KUBECONFIG }}" ]; then
+          echo "Erro: O secret MGC_KUBECONFIG esta vazio!"
+          exit 1
+        fi
+        echo "${{ secrets.MGC_KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl cluster-info
 
-          # Substituição segura de variáveis no YAML
-          sed -i 's|${MGC_REGISTRY_NAME}|'"${{ secrets.MGC_REGISTRY_NAME }}"'|g' k8s/app.yaml
-          sed -i 's|${IMAGE_TAG}|'"${{ github.sha }}"'|g' k8s/app.yaml
-          
-          kubectl apply -f k8s/app.yaml
-          kubectl rollout status deployment/cloud-application
+    - name: Criar Secret do registry
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl create secret docker-registry registry-secret \
+          --docker-server=${{ env.REGISTRY }} \
+          --docker-username=${{ secrets.MGC_REGISTRY_USER }} \
+          --docker-password=${{ secrets.MGC_REGISTRY_PASSWORD }} \
+          --dry-run=client -o yaml | kubectl apply -n default -f -
+
+    - name: Criar Secret do Banco de Dados
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        if [ -z "${{ secrets.MGC_DATABASE_URL }}" ]; then
+          echo "Erro: O secret MGC_DATABASE_URL nao esta definido no GitHub!"
+          exit 1
+        fi
+        kubectl create secret generic db-secret \
+          --from-literal=url="${{ secrets.MGC_DATABASE_URL }}" \
+          --dry-run=client -o yaml | kubectl apply -n default -f -
+
+    - name: Deploy no Kubernetes
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        export MGC_REGISTRY_NAME="${{ secrets.MGC_REGISTRY_NAME }}"
+        export IMAGE_TAG="${{ github.sha }}"
+        sed -i 's|\${MGC_REGISTRY_NAME}|'"$MGC_REGISTRY_NAME"'|g' k8s/app.yaml
+        sed -i 's|\${IMAGE_TAG}|'"$IMAGE_TAG"'|g' k8s/app.yaml
+        kubectl apply -n default -f k8s/app.yaml
+        kubectl rollout status deployment/cloud-application -n default
