@@ -38,7 +38,8 @@ jobs:
         tools: composer
 
     - name: Instalar dependências via Composer
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: |
+        composer update --prefer-dist --no-progress
       working-directory: .
 
     - name: Executar testes PHPUnit
