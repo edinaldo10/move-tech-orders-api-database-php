@@ -1,0 +1,18 @@
+# Dependências do PHP
+/vendor/
+
+# Arquivos de ambiente e locais
+.env
+.env.local
+
+# Logs e arquivos temporários
+/var/
+/storage/*.key
+*.log
+
+# IDEs e editores
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store

@@ -1,0 +1,54 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Edinaldo\\Documents\\move-tech-orders-api-database-dotnet\\tests\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F255845C-0046-D6E1-B7F4-4390DADAC5BE}|CloudApplication-tests.csproj|c:\\users\\edinaldo\\documents\\move-tech-orders-api-database-dotnet\\tests\\apitests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F255845C-0046-D6E1-B7F4-4390DADAC5BE}|CloudApplication-tests.csproj|solutionrelative:apitests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F255845C-0046-D6E1-B7F4-4390DADAC5BE}|CloudApplication-tests.csproj|c:\\users\\edinaldo\\documents\\move-tech-orders-api-database-dotnet\\tests\\cloudapplication-tests.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{F255845C-0046-D6E1-B7F4-4390DADAC5BE}|CloudApplication-tests.csproj|solutionrelative:cloudapplication-tests.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ApiTests.cs",
+              "DocumentMoniker": "C:\\Users\\Edinaldo\\Documents\\move-tech-orders-api-database-dotnet\\tests\\ApiTests.cs",
+              "RelativeDocumentMoniker": "ApiTests.cs",
+              "ToolTip": "C:\\Users\\Edinaldo\\Documents\\move-tech-orders-api-database-dotnet\\tests\\ApiTests.cs",
+              "RelativeToolTip": "ApiTests.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-08-01T03:30:50.142Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CloudApplication-tests",
+              "DocumentMoniker": "C:\\Users\\Edinaldo\\Documents\\move-tech-orders-api-database-dotnet\\tests\\CloudApplication-tests.csproj",
+              "RelativeDocumentMoniker": "CloudApplication-tests.csproj",
+              "ToolTip": "C:\\Users\\Edinaldo\\Documents\\move-tech-orders-api-database-dotnet\\tests\\CloudApplication-tests.csproj",
+              "RelativeToolTip": "CloudApplication-tests.csproj",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAcwBQAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-08-01T02:57:07.114Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

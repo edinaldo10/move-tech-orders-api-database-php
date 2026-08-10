@@ -1,0 +1,111 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: container-registry.br-se1.magalu.cloud
+  IMAGE_NAME: cloud-application-php
+  PHP_VERSION: '8.2'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: orders
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configurar PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pgsql
+        tools: composer
+
+    - name: Instalar dependências via Composer
+      run: composer install --prefer-dist --no-progress --no-suggest
+      working-directory: .
+
+    - name: Executar testes PHPUnit
+      env:
+        DATABASE_URL: pgsql://postgres:postgres@localhost:5432/orders
+      run: vendor/bin/phpunit
+      working-directory: .
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Login no Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.MGC_REGISTRY_USER }}
+        password: ${{ secrets.MGC_REGISTRY_PASSWORD }}
+
+    - name: Build e push da imagem
+      run: |
+        REGISTRY_NAME="${{ secrets.MGC_REGISTRY_NAME }}"
+        if [ -z "$REGISTRY_NAME" ]; then
+          echo "Erro: O secret MGC_REGISTRY_NAME nao esta definido ou esta vazio!"
+          exit 1
+        fi
+        BASE="${{ env.REGISTRY }}/$REGISTRY_NAME/${{ env.IMAGE_NAME }}"
+        docker build --no-cache -t $BASE:${{ github.sha }} -t $BASE:latest -f Dockerfile .
+        docker push $BASE:${{ github.sha }}
+        docker push $BASE:latest
+
+    - name: Configurar kubectl e Validar Cluster
+      run: |
+        if [ -z "${{ secrets.MGC_KUBECONFIG }}" ]; then
+          echo "Erro: O secret MGC_KUBECONFIG esta vazio!"
+          exit 1
+        fi
+        echo "${{ secrets.MGC_KUBECONFIG }}" > kubeconfig.yaml
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl cluster-info
+
+    - name: Criar Secret do registry
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        kubectl create secret docker-registry registry-secret \
+          --docker-server=${{ env.REGISTRY }} \
+          --docker-username=${{ secrets.MGC_REGISTRY_USER }} \
+          --docker-password=${{ secrets.MGC_REGISTRY_PASSWORD }} \
+          --dry-run=client -o yaml | kubectl apply -n default -f -
+
+    - name: Criar Secret do Banco de Dados
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        if [ -z "${{ secrets.MGC_DATABASE_URL }}" ]; then
+          echo "Erro: O secret MGC_DATABASE_URL nao esta definido no GitHub!"
+          exit 1
+        fi
+        kubectl create secret generic db-secret \
+          --from-literal=url="${{ secrets.MGC_DATABASE_URL }}" \
+          --dry-run=client -o yaml | kubectl apply -n default -f -
+
+    - name: Deploy no Kubernetes
+      run: |
+        export KUBECONFIG=kubeconfig.yaml
+        export MGC_REGISTRY_NAME="${{ secrets.MGC_REGISTRY_NAME }}"
+        export IMAGE_TAG="${{ github.sha }}"
+        envsubst '$MGC_REGISTRY_NAME $IMAGE_TAG' < k8s/app.yaml | kubectl apply -n default -f -
+        kubectl rollout status deployment/cloud-application -n default
